@@ -4,7 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>To-Do Management</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons@latest/tabler-icons.min.css">
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
   <style>
     :root {
       --navy: #1f5287;
@@ -590,6 +591,52 @@
     let editingInterimId = null;
     let pressTimer = null;
 
+    // Firebase Configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyA2wMNsXDN11ipKW8jiPjcalx6kBsF0rHE",
+      authDomain: "kps-todos.firebaseapp.com",
+      projectId: "kps-todos",
+      storageBucket: "kps-todos.firebasestorage.app",
+      messagingSenderId: "158828042302",
+      appId: "1:158828042302:web:80d7675a2db88e29bcd96f"
+    };
+
+    const app = firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore(app);
+
+    // Firestore Sync Functions
+    async function syncToFirestore() {
+      try {
+        await db.collection('todos').doc('shared').set({ items: todos });
+      } catch (error) {
+        console.error('Firestore sync error:', error);
+      }
+    }
+
+    async function loadFromFirestore() {
+      try {
+        const doc = await db.collection('todos').doc('shared').get();
+        if (doc.exists) {
+          todos = doc.data().items || [];
+        } else {
+          todos = defaultTodos;
+          await syncToFirestore();
+        }
+      } catch (error) {
+        console.error('Firestore load error:', error);
+        todos = defaultTodos;
+      }
+    }
+
+    function setupRealtimeListener() {
+      db.collection('todos').doc('shared').onSnapshot((doc) => {
+        if (doc.exists) {
+          todos = doc.data().items || [];
+          render();
+        }
+      });
+    }
+
     const defaultTodos = [
       { id: 1, title: 'Test Roborock on 2.4GHz band', hours: 0.5, dueDate: '2026-06-02', interim: 'Install old router', completed: false },
       { id: 2, title: 'Research loft disposal options', hours: 1, dueDate: '2026-06-02', interim: '', completed: false },
@@ -637,6 +684,7 @@
       statusEl.title = 'Saving...';
       
       localStorage.setItem(STORAGE_KEY, JSON.stringify(todos));
+      syncToFirestore();
       
       setTimeout(() => {
         statusEl.className = 'save-status';
@@ -929,9 +977,10 @@
       if (e.key === 'Escape') closeEditModal();
     });
 
-    loadTodos();
-    updateStats();
-    render();
+    loadFromFirestore().then(() => {
+      setupRealtimeListener();
+      render();
+    });
   </script>
 </body>
 </html>
