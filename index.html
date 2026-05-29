@@ -85,6 +85,10 @@
       animation: pulse 1s infinite;
     }
 
+    .save-status.error {
+      background: #E53935;
+    }
+
     @keyframes pulse {
       0%, 100% { opacity: 1; }
       50% { opacity: 0.5; }
@@ -611,8 +615,10 @@
     async function syncToFirestore() {
       try {
         await db.collection('todos').doc('shared').set({ items: todos });
+        return true;
       } catch (error) {
         console.error('Firestore sync error:', error);
+        return false;
       }
     }
 
@@ -681,18 +687,24 @@
       }
     }
 
-    function saveTodos() {
+    async function saveTodos() {
       const statusEl = document.getElementById('save-status');
       statusEl.className = 'save-status saving';
-      statusEl.title = 'Saving...';
-      
+      statusEl.title = 'Saving to cloud...';
+
+      // Always save locally first (this is the offline safety net)
       localStorage.setItem(STORAGE_KEY, JSON.stringify(todos));
-      syncToFirestore();
-      
-      setTimeout(() => {
+
+      // Then confirm against the cloud database
+      const ok = await syncToFirestore();
+
+      if (ok) {
         statusEl.className = 'save-status';
-        statusEl.title = 'Saved';
-      }, 300);
+        statusEl.title = 'Saved to cloud';
+      } else {
+        statusEl.className = 'save-status error';
+        statusEl.title = 'Cloud save failed — saved on this device only. Check your connection.';
+      }
     }
 
     function updateSaveStatus() {
