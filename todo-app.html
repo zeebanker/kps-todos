@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>To-Do Management</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons@latest/tabler-icons.min.css">
+  <style>
+    :root {
+      --navy: #1f5287;
+      --navy-dark: #0f2d4a;
+      --accent: #8B1538;
+      --surface: #1a3a52;
+      --surface-light: #2a4a62;
+      --bg: #0f2d4a;
+      --ink-1: #ffffff;
+      --ink-2: #b0c4de;
+      --ink-3: #7a8fa0;
+      --rule: #3a5a72;
+      --rule-light: #2a4a62;
+      --serif: 'Georgia', 'Times New Roman', serif;
+      --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: var(--sans);
+      background: var(--bg);
+      color: var(--ink-1);
+      padding: 32px 20px;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    header {
+      margin-bottom: 32px;
+      border-bottom: 2px solid var(--accent);
+      padding-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .header-left {
+      flex: 1;
+    }
+
+    h1 {
+      font-family: var(--serif);
+      font-size: 32px;
+      font-weight: 400;
+      color: var(--ink-1);
+      margin-bottom: 0;
+      letter-spacing: -0.5px;
+    }
+
+    .save-status {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #4CAF50;
+      transition: background 0.3s;
+      cursor: pointer;
+    }
+
+    .save-status.unsaved {
+      background: #FFC107;
+    }
+
+    .save-status.saving {
+      background: #FFC107;
+      animation: pulse 1s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 24px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .controls-left {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    button {
+      padding: 10px 16px;
+      border: 1px solid var(--rule);
+      background: var(--surface);
+      color: var(--ink-1);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      transition: all 0.2s;
+      font-family: var(--sans);
+    }
+
+    button:hover {
+      border-color: var(--accent);
+      background: var(--surface-light);
+    }
+
+    button.primary {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+    }
+
+    button.primary:hover {
+      background: #c71c1c;
+      border-color: #c71c1c;
+    }
+
+    button.filter-btn {
+      opacity: 0.6;
+    }
+
+    button.filter-btn.active {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+      opacity: 1;
+    }
+
+    .stats-container {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .stat-box {
+      border-radius: 0;
+      padding: 10px 16px;
+      display: flex;
+      flex-direction: row;
+      justify-content: flex-start;
+      align-items: center;
+      gap: 12px;
+      min-height: 36px;
+    }
+
+    .stat-box.remaining-stat {
+      background: #8B1538;
+    }
+
+    .stat-box.completed-stat {
+      background: #0C447C;
+    }
+
+    .stat-icon {
+      font-size: 18px;
+      margin: 0;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+
+    .stat-box.remaining-stat .stat-icon {
+      color: #f5c4b3;
+    }
+
+    .stat-box.completed-stat .stat-icon {
+      color: #b5d4f4;
+    }
+
+    .stat-number {
+      font-size: 20px;
+      font-weight: 500;
+      margin: 0;
+      line-height: 1;
+      color: #ffffff;
+    }
+
+    .stat-box.remaining-stat .stat-number {
+      color: #ffffff;
+    }
+
+    .stat-box.completed-stat .stat-number {
+      color: #ffffff;
+    }
+
+    .table-wrapper {
+      overflow-x: auto;
+      border: 1px solid var(--rule);
+      background: var(--surface);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    thead {
+      background: #8B1538;
+      border-bottom: none;
+    }
+
+    th {
+      padding: 14px;
+      text-align: left;
+      font-weight: 700;
+      color: var(--ink-1);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-size: 11px;
+    }
+
+    tbody tr:nth-child(odd) {
+      background: var(--surface);
+    }
+
+    tbody tr:nth-child(even) {
+      background: var(--surface-light);
+    }
+
+    tbody tr.completed {
+      opacity: 0.4;
+    }
+
+    tbody tr:hover {
+      background: #ffffff !important;
+      border-left: 4px solid var(--accent) !important;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+      position: relative;
+      z-index: 10;
+    }
+
+    tbody tr:hover td {
+      color: var(--navy-dark) !important;
+      border-bottom-color: rgba(0, 0, 0, 0.1) !important;
+    }
+
+    tbody tr:hover .item-title {
+      color: var(--navy-dark) !important;
+    }
+
+    tbody tr:hover .item-title.completed {
+      color: var(--navy-dark) !important;
+      opacity: 0.6;
+    }
+
+    tbody tr:hover td.hours-cell {
+      color: var(--navy-dark) !important;
+    }
+
+    tbody tr:hover td.date-cell {
+      color: var(--navy-dark) !important;
+    }
+
+    tbody tr:hover td.date-cell input[type="date"] {
+      color: var(--navy-dark) !important;
+    }
+
+    td {
+      padding: 14px;
+      border-bottom: 1px solid var(--rule);
+      color: var(--ink-2);
+      font-family: var(--sans);
+      letter-spacing: 0.02em;
+    }
+
+    tbody tr {
+      transition: box-shadow 0.2s;
+      cursor: grab;
+      user-select: none;
+    }
+
+    tbody tr:active {
+      cursor: grabbing;
+    }
+
+    tbody tr.dragging {
+      opacity: 0.5;
+    }
+
+    tbody tr.drag-over {
+      background: var(--surface-light);
+    }
+
+    tbody tr.completed {
+      opacity: 0.4;
+    }
+
+    .checkbox-cell {
+      width: 40px;
+      text-align: center;
+    }
+
+    .checkbox-cell input {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+      accent-color: #4a9d6f;
+    }
+
+    .item-title {
+      font-weight: 400;
+      color: var(--ink-1);
+      cursor: default;
+      font-family: var(--sans);
+      letter-spacing: 0.02em;
+    }
+
+    .item-title.completed {
+      text-decoration: line-through;
+      color: var(--ink-3);
+    }
+
+    .hours-cell {
+      text-align: center;
+      width: 80px;
+      font-weight: 600;
+    }
+
+    td.hours-cell {
+      color: var(--ink-2);
+      font-weight: 600;
+    }
+
+    .date-cell {
+      width: 130px;
+    }
+
+    td.date-cell {
+      color: var(--ink-2);
+    }
+
+    .date-cell input[type="date"] {
+      background: transparent;
+      border: none;
+      color: var(--ink-2);
+      cursor: pointer;
+      padding: 0;
+      font-family: var(--sans);
+      font-size: 13px;
+    }
+
+    .date-cell input[type="date"]:focus {
+      outline: none;
+      color: var(--accent);
+    }
+
+.delete-cell {
+      width: 40px;
+      text-align: center;
+      padding: 14px;
+    }
+
+    .delete-btn {
+      background: none;
+      border: none;
+      color: var(--ink-3);
+      cursor: pointer;
+      padding: 4px 8px;
+      font-size: 16px;
+      transition: color 0.2s;
+    }
+
+    .delete-btn:hover {
+      color: var(--accent);
+    }
+
+    .total-row {
+      background: var(--rule-light);
+      font-weight: 700;
+      border-top: 1px solid var(--accent);
+    }
+
+    .total-row td {
+      border-bottom: none;
+      color: var(--ink-1);
+      padding: 14px;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: var(--surface);
+      border: 1px solid var(--accent);
+      padding: 24px;
+      width: 90%;
+      max-width: 500px;
+      max-height: 80vh;
+      overflow-y: auto;
+      border-radius: 0;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--rule);
+      padding-bottom: 16px;
+    }
+
+    .modal-header h2 {
+      font-family: var(--serif);
+      font-size: 20px;
+      font-weight: 400;
+      color: var(--ink-1);
+      margin: 0;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: var(--ink-3);
+      padding: 0;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-close:hover {
+      color: var(--ink-1);
+    }
+
+    textarea {
+      width: 100%;
+      height: 200px;
+      background: var(--surface-light);
+      border: 1px solid var(--rule);
+      color: var(--ink-2);
+      padding: 12px;
+      font-family: var(--sans);
+      font-size: 13px;
+      resize: vertical;
+    }
+
+    textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 20px;
+    }
+
+    .modal-actions button {
+      flex: 1;
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 16px;
+      }
+
+      h1 {
+        font-size: 24px;
+      }
+
+      th, td {
+        padding: 10px;
+        font-size: 12px;
+      }
+
+      .modal-content {
+        width: 95%;
+        max-height: 90vh;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="header-left">
+        <h1>KP's To-Dos</h1>
+      </div>
+      <div class="save-status" id="save-status" title="Saved"></div>
+    </header>
+
+    <div class="controls">
+      <div class="controls-left">
+        <button class="primary" onclick="addNewItem()">+ Item</button>
+        <button class="filter-btn active" onclick="filterByStatus('all')" id="filter-all">All</button>
+        <button class="filter-btn" onclick="filterByStatus('completed')" id="filter-completed">Completed</button>
+      </div>
+      <div class="stats-container">
+        <div class="stat-box remaining-stat">
+          <p class="stat-icon"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="6.5"/><path d="M8 4v4l3 2"/></svg></p>
+          <p class="stat-number" id="remaining-count">0</p>
+        </div>
+        <div class="stat-box completed-stat">
+          <p class="stat-icon">✓</p>
+          <p class="stat-number" id="completed-count">0</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-wrapper">
+      <table id="todo-table">
+        <thead>
+          <tr>
+            <th>To-Do</th>
+            <th class="hours-cell">Hours</th>
+            <th class="date-cell">Due Date</th>
+            <th>Interim Steps</th>
+            <th class="checkbox-cell">✓</th>
+            <th class="delete-cell"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2" xmlns="http://www.w3.org/2000/svg"><path d="M2 4h12M6 1h4M3 4v10c0 1 0.5 1.5 1.5 1.5h7c1 0 1.5-0.5 1.5-1.5V4M6 7v6M10 7v6"/></svg></th>
+          </tr>
+        </thead>
+        <tbody id="table-body">
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="modal" id="edit-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Edit Item</h2>
+        <button class="modal-close" onclick="closeEditModal()">×</button>
+      </div>
+      
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; color: var(--ink-3); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px;">Title</label>
+        <input type="text" id="edit-title" style="width: 100%; padding: 10px; background: var(--surface-light); border: 1px solid var(--rule); color: var(--ink-2); font-family: var(--sans); font-size: 14px;">
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+        <div>
+          <label style="display: block; color: var(--ink-3); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px;">Hours</label>
+          <input type="number" id="edit-hours" step="0.5" min="0" style="width: 100%; padding: 10px; background: var(--surface-light); border: 1px solid var(--rule); color: var(--ink-2); font-family: var(--sans); font-size: 14px;">
+        </div>
+        <div>
+          <label style="display: block; color: var(--ink-3); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px;">Due Date</label>
+          <input type="date" id="edit-duedate" style="width: 100%; padding: 10px; background: var(--surface-light); border: 1px solid var(--rule); color: var(--ink-2); font-family: var(--sans); font-size: 14px;">
+        </div>
+      </div>
+
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; color: var(--ink-3); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px;">Interim Steps (one per line)</label>
+        <textarea id="edit-interim" style="width: 100%; height: 120px; padding: 10px; background: var(--surface-light); border: 1px solid var(--rule); color: var(--ink-2); font-family: var(--sans); font-size: 13px;" placeholder="One step per line"></textarea>
+      </div>
+
+      <div class="modal-actions">
+        <button class="primary" onclick="saveEditModal()">Save</button>
+        <button onclick="closeEditModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'todoList';
+    let todos = [];
+    let currentFilter = 'all';
+    let draggedElement = null;
+    let editingInterimId = null;
+    let pressTimer = null;
+
+    const defaultTodos = [
+      { id: 1, title: 'Test Roborock on 2.4GHz band', hours: 0.5, dueDate: '2026-06-02', interim: 'Install old router', completed: false },
+      { id: 2, title: 'Research loft disposal options', hours: 1, dueDate: '2026-06-02', interim: '', completed: false },
+      { id: 3, title: 'Update passwords book', hours: 2, dueDate: '2026-06-02', interim: '', completed: false },
+      { id: 4, title: 'File taxes', hours: 8, dueDate: '2026-06-02', interim: 'Gather supporting material', completed: false },
+      { id: 5, title: 'Clean upstairs office', hours: 0.5, dueDate: '2026-06-09', interim: '', completed: false },
+      { id: 6, title: 'Basement utility cleanup + mouse traps', hours: 1, dueDate: '2026-06-09', interim: '', completed: false },
+      { id: 7, title: 'Install humidifier filters', hours: 0.3, dueDate: '2026-06-03', interim: '', completed: false },
+      { id: 8, title: 'Loft cleanup', hours: 4, dueDate: '2026-06-16', interim: '', completed: false },
+      { id: 9, title: 'Finish memorial mailbox', hours: 15, dueDate: '2026-07-31', interim: 'Figure out wood carving options', completed: false },
+      { id: 10, title: 'Garage cleanup', hours: 3, dueDate: '2026-06-23', interim: 'Move stuff into the attic', completed: false },
+      { id: 11, title: 'Organize garage tools', hours: 3, dueDate: '2026-06-23', interim: '', completed: false },
+      { id: 12, title: 'Install gazebo stakes', hours: 6, dueDate: '2026-07-31', interim: 'Figure out best way to anchor stakes', completed: false },
+      { id: 13, title: 'Yard cleanup by apple trees', hours: 6, dueDate: '2026-07-31', interim: 'Order mulch', completed: false },
+      { id: 14, title: 'Organize 1000 LPs', hours: 20, dueDate: '2026-09-30', interim: '', completed: false },
+      { id: 15, title: 'Paint laundry room', hours: 4, dueDate: '2026-08-31', interim: '', completed: false },
+      { id: 16, title: 'Touch up paint in office', hours: 3, dueDate: '2026-08-31', interim: '', completed: false },
+      { id: 17, title: 'Basement bathroom', hours: 8, dueDate: '2026-08-31', interim: '', completed: false },
+      { id: 18, title: 'Wrap up garden fencing', hours: 2, dueDate: '2026-08-31', interim: '', completed: false },
+      { id: 19, title: 'Paint family room built-ins', hours: 7, dueDate: '2026-08-31', interim: '', completed: false },
+      { id: 20, title: 'Clean up front yard plant area', hours: 7, dueDate: '2026-08-31', interim: '', completed: false },
+      { id: 21, title: 'Redo master closet', hours: 15, dueDate: '2026-09-30', interim: '', completed: false },
+      { id: 22, title: 'Clean grout in bathroom tiles', hours: 2, dueDate: '2026-08-31', interim: '', completed: false },
+      { id: 23, title: 'Hook up basement stereo system', hours: 2, dueDate: '2026-08-31', interim: '', completed: false },
+      { id: 24, title: 'Daily 30-min exercise', hours: 0, dueDate: '2099-12-31', interim: 'Need a plan by weekday', completed: false },
+      { id: 25, title: 'Begin working on book to Arya', hours: 0, dueDate: '2099-12-31', interim: '', completed: false },
+      { id: 26, title: 'Organize stamp collection', hours: 0, dueDate: '2099-12-31', interim: '', completed: false },
+      { id: 27, title: 'Subaru alignment and tire rotation', hours: 1, dueDate: '2026-06-06', interim: 'Costco appointment', completed: false },
+      { id: 28, title: 'Jeep 100k service', hours: 2, dueDate: '2026-07-31', interim: 'Research costs and best practices', completed: false },
+    ];
+
+    function loadTodos() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        todos = JSON.parse(saved);
+      } else {
+        todos = JSON.parse(JSON.stringify(defaultTodos));
+        saveTodos();
+      }
+    }
+
+    function saveTodos() {
+      const statusEl = document.getElementById('save-status');
+      statusEl.className = 'save-status saving';
+      statusEl.title = 'Saving...';
+      
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(todos));
+      
+      setTimeout(() => {
+        statusEl.className = 'save-status';
+        statusEl.title = 'Saved';
+      }, 300);
+    }
+
+    function updateSaveStatus() {
+      const statusEl = document.getElementById('save-status');
+      statusEl.className = 'save-status unsaved';
+      statusEl.title = 'Unsaved changes';
+    }
+
+    function updateStats() {
+      const completed = todos.filter(t => t.completed).length;
+      const remaining = todos.filter(t => !t.completed).length;
+      document.getElementById('remaining-count').textContent = remaining;
+      document.getElementById('completed-count').textContent = completed;
+    }
+
+    function getFilteredTodos() {
+      let filtered;
+      if (currentFilter === 'active') {
+        filtered = todos.filter(t => !t.completed);
+      } else if (currentFilter === 'completed') {
+        filtered = todos.filter(t => t.completed);
+      } else {
+        filtered = todos;
+      }
+
+      // Sort by due date
+      const sortByDate = (a, b) => {
+        const dateA = new Date(a.dueDate);
+        const dateB = new Date(b.dueDate);
+        return dateA - dateB;
+      };
+
+      if (currentFilter === 'all') {
+        const active = filtered.filter(t => !t.completed).sort(sortByDate);
+        const completed = filtered.filter(t => t.completed).sort(sortByDate);
+        return [...active, ...completed];
+      } else {
+        return filtered.sort(sortByDate);
+      }
+    }
+
+    function filterByStatus(filter) {
+      currentFilter = filter;
+      document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+      document.getElementById(`filter-${filter}`).classList.add('active');
+      render();
+    }
+
+    function deleteItem(id, e) {
+      e.stopPropagation();
+      const todo = todos.find(t => t.id === id);
+      if (todo && confirm(`Delete "${todo.title}"?`)) {
+        todos = todos.filter(t => t.id !== id);
+        updateSaveStatus();
+        saveTodos();
+        render();
+      }
+    }
+
+    function toggleComplete(id, e) {
+      e.stopPropagation();
+      const todo = todos.find(t => t.id === id);
+      if (todo) {
+        todo.completed = !todo.completed;
+        updateSaveStatus();
+        saveTodos();
+        updateStats();
+        render();
+      }
+    }
+
+    function updateDueDate(id, value) {
+      const todo = todos.find(t => t.id === id);
+      if (todo) {
+        todo.dueDate = value;
+        updateSaveStatus();
+        saveTodos();
+        render();
+      }
+    }
+
+    function formatDate(dateStr) {
+      const date = new Date(dateStr + 'T00:00:00');
+      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const day = days[date.getUTCDay()];
+      const month = months[date.getUTCMonth()];
+      const dayNum = String(date.getUTCDate()).padStart(2, ' ');
+      return `${day} ${month} ${dayNum}`;
+    }
+
+    function openEditModal(id) {
+      editingInterimId = id;
+      const todo = todos.find(t => t.id === id);
+      if (todo) {
+        document.getElementById('edit-title').value = todo.title;
+        document.getElementById('edit-hours').value = todo.hours;
+        document.getElementById('edit-duedate').value = todo.dueDate;
+        document.getElementById('edit-interim').value = todo.interim;
+        document.getElementById('edit-modal').classList.add('active');
+        document.getElementById('edit-title').focus();
+      }
+    }
+
+    function closeEditModal() {
+      // If closing a new item without a title, remove it from the list
+      const todo = todos.find(t => t.id === editingInterimId);
+      if (todo && !todo.title.trim()) {
+        todos = todos.filter(t => t.id !== editingInterimId);
+        saveTodos();
+        render();
+      }
+      
+      document.getElementById('edit-modal').classList.remove('active');
+      editingInterimId = null;
+    }
+
+    function saveEditModal() {
+      const title = document.getElementById('edit-title').value.trim();
+      if (!title) {
+        alert('Title is required');
+        return;
+      }
+      
+      const todo = todos.find(t => t.id === editingInterimId);
+      if (todo) {
+        todo.title = title;
+        todo.hours = parseFloat(document.getElementById('edit-hours').value) || 0;
+        todo.dueDate = document.getElementById('edit-duedate').value;
+        todo.interim = document.getElementById('edit-interim').value;
+        updateSaveStatus();
+        saveTodos();
+        render();
+        closeEditModal();
+      }
+    }
+
+    function startPress(id) {
+      pressTimer = setTimeout(() => {
+        openEditModal(id);
+      }, 500);
+    }
+
+    function endPress() {
+      if (pressTimer) {
+        clearTimeout(pressTimer);
+        pressTimer = null;
+      }
+    }
+
+    function onDragStart(e, index) {
+      draggedElement = index;
+      e.dataTransfer.effectAllowed = 'move';
+      e.target.closest('tr').classList.add('dragging');
+    }
+
+    function onDragOver(e) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+    }
+
+    function onDragEnter(e) {
+      const tr = e.target.closest('tr');
+      if (tr) tr.classList.add('drag-over');
+    }
+
+    function onDragLeave(e) {
+      const tr = e.target.closest('tr');
+      if (tr) tr.classList.remove('drag-over');
+    }
+
+    function onDrop(e, targetIndex) {
+      e.preventDefault();
+      const tr = e.target.closest('tr');
+      if (tr) tr.classList.remove('drag-over');
+
+      if (draggedElement !== null && draggedElement !== targetIndex) {
+        const filtered = getFilteredTodos();
+        const draggedTodo = filtered[draggedElement];
+        const targetTodo = filtered[targetIndex];
+
+        const draggedIdx = todos.indexOf(draggedTodo);
+        const targetIdx = todos.indexOf(targetTodo);
+
+        [todos[draggedIdx], todos[targetIdx]] = [todos[targetIdx], todos[draggedIdx]];
+
+        updateSaveStatus();
+        saveTodos();
+        render();
+      }
+      draggedElement = null;
+    }
+
+    function onDragEnd(e) {
+      e.target.closest('tr').classList.remove('dragging');
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function render() {
+      const filtered = getFilteredTodos();
+      const tbody = document.getElementById('table-body');
+      tbody.innerHTML = '';
+
+      let itemNum = 1;
+      filtered.forEach((todo, idx) => {
+        const row = document.createElement('tr');
+        row.className = currentFilter === 'all' && todo.completed ? 'completed' : '';
+        row.draggable = true;
+        row.addEventListener('dragstart', (e) => onDragStart(e, idx));
+        row.addEventListener('dragover', onDragOver);
+        row.addEventListener('dragenter', onDragEnter);
+        row.addEventListener('dragleave', onDragLeave);
+        row.addEventListener('drop', (e) => onDrop(e, idx));
+        row.addEventListener('dragend', onDragEnd);
+        row.addEventListener('touchstart', () => startPress(todo.id));
+        row.addEventListener('touchend', endPress);
+        row.addEventListener('mousedown', () => startPress(todo.id));
+        row.addEventListener('mouseup', endPress);
+        row.addEventListener('dblclick', () => openEditModal(todo.id));
+
+        row.innerHTML = `
+          <td><span class="item-title ${currentFilter === 'all' && todo.completed ? 'completed' : ''}">${itemNum}. ${escapeHtml(todo.title)}</span></td>
+          <td class="hours-cell">${todo.hours}</td>
+          <td class="date-cell">
+            <input type="date" value="${todo.dueDate}" onchange="updateDueDate(${todo.id}, this.value)" onclick="event.stopPropagation()">
+          </td>
+          <td>${escapeHtml(todo.interim.split('\n')[0] || '')}</td>
+          <td class="checkbox-cell">
+            <input type="checkbox" ${todo.completed ? 'checked' : ''} onchange="toggleComplete(${todo.id}, event)">
+          </td>
+          <td class="delete-cell"><button class="delete-btn" onclick="deleteItem(${todo.id}, event)" title="Delete">×</button></td>
+        `;
+
+        tbody.appendChild(row);
+        itemNum++;
+      });
+
+      const totalHours = todos.filter(t => !['2099-12-31'].includes(t.dueDate)).reduce((sum, t) => sum + t.hours, 0);
+      const totalRow = document.createElement('tr');
+      totalRow.className = 'total-row';
+      totalRow.innerHTML = `
+        <td style="font-weight: 700;">Total (excluding ongoing)</td>
+        <td class="hours-cell">${Math.round(totalHours * 10) / 10}</td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+      `;
+      tbody.appendChild(totalRow);
+      updateStats();
+    }
+
+    function addNewItem() {
+      const newId = Math.max(...todos.map(t => t.id), 0) + 1;
+      const today = new Date().toISOString().split('T')[0];
+      const newTodo = {
+        id: newId,
+        title: '',
+        hours: 0,
+        dueDate: today,
+        interim: '',
+        completed: false
+      };
+      todos.push(newTodo);
+      editingInterimId = newId;
+      
+      document.getElementById('edit-title').value = '';
+      document.getElementById('edit-hours').value = 0;
+      document.getElementById('edit-duedate').value = today;
+      document.getElementById('edit-interim').value = '';
+      document.getElementById('edit-modal').classList.add('active');
+      document.getElementById('edit-title').focus();
+    }
+
+    document.getElementById('edit-modal').addEventListener('click', (e) => {
+      if (e.target.id === 'edit-modal') closeEditModal();
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeEditModal();
+    });
+
+    loadTodos();
+    updateStats();
+    render();
+  </script>
+</body>
+</html>
